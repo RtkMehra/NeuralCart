@@ -18,15 +18,15 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: neuralcart/v5_singularity/backend/Dockerfile
+          context: neuralcart
+          file: v5_singularity/backend/Dockerfile
           push: false
           tags: neuralcart/backend:latest
 
       - name: Build frontend image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: neuralcart/v5_singularity/frontend/Dockerfile
+          context: neuralcart
+          file: v5_singularity/frontend/Dockerfile
           push: false
           tags: neuralcart/frontend:latest
