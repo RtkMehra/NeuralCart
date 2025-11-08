@@ -19,7 +19,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: v5_singularity/backend/Dockerfile
+          file: neuralcart/v5_singularity/backend/Dockerfile
           push: false
           tags: neuralcart/backend:latest
 
@@ -27,7 +27,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: v5_singularity/frontend/Dockerfile
+          file: neuralcart/v5_singularity/frontend/Dockerfile
           push: false
           tags: neuralcart/frontend:latest
-
