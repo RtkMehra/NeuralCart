@@ -1,0 +1,119 @@
+services:
+  db:
+    image: ankane/pgvector:latest
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: neuralcart
+      POSTGRES_PASSWORD: neuralcart
+      POSTGRES_DB: neuralcart
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - '9200:9200'
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  ollama:
+    image: ollama/ollama
+    restart: unless-stopped
+    ports:
+      - '11434:11434'
+    volumes:
+      - ollama-data:/root/.ollama
+
+  backend:
+    build:
+      context: ..
+      dockerfile: v5_singularity/backend/Dockerfile
+    env_file:
+      - ./.env.example
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: neuralcart
+      DB_PASS: neuralcart
+      DB_NAME: neuralcart
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      OLLAMA_URL: http://ollama:11434
+      METRICS_ENABLED: 'true'
+      EMBEDDINGS_MODE: ${EMBEDDINGS_MODE:-mock}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-all-minilm}
+    depends_on:
+      - db
+      - redis
+      - elasticsearch
+      - ollama
+    ports:
+      - '4000:4000'
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: v5_singularity/frontend/Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://backend:4000/api/v1
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+
+  worker:
+    build:
+      context: ..
+      dockerfile: v5_singularity/backend/Dockerfile
+    command: ["pnpm", "--filter", "@neuralcart/v5-backend", "seed"]
+    depends_on:
+      - backend
+    profiles:
+      - seed
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - '9090:9090'
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:10.4.1
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/dashboards:/var/lib/grafana/dashboards
+      - ./observability/provisioning:/etc/grafana/provisioning
+    ports:
+      - '3001:3000'
+    depends_on:
+      - prometheus
+
+volumes:
+  db-data:
+  redis-data:
+  es-data:
+  ollama-data:
+  grafana-data:
+

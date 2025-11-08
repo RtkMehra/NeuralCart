@@ -1,0 +1,5 @@
+packages:
+  - "v0_neural_dawn/backend"
+  - "v0_neural_dawn/frontend"
+  - "v5_singularity/backend"
+  - "v5_singularity/frontend"

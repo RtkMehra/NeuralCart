@@ -1,0 +1,11 @@
+.git
+node_modules
+**/node_modules
+**/.turbo
+**/.next
+**/dist
+**/build
+*.log
+.vscode
+.DS_Store
+dump.rdb

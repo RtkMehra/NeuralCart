@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: neuralcart
+      POSTGRES_PASSWORD: neuralcart
+      POSTGRES_DB: neuralcart
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ..
+      dockerfile: v0_neural_dawn/backend/Dockerfile
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: neuralcart
+      DB_PASS: neuralcart
+      DB_NAME: neuralcart
+      PORT: 4000
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: v0_neural_dawn/frontend/Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://backend:4000/api/v1
+    depends_on:
+      - backend
+
+  seed:
+    build:
+      context: ..
+      dockerfile: v0_neural_dawn/backend/Dockerfile
+    command: pnpm --filter @neuralcart/v0-backend seed
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: neuralcart
+      DB_PASS: neuralcart
+      DB_NAME: neuralcart
+      PORT: 4000
+    depends_on:
+      - backend
+    profiles:
+      - seed
+
+volumes:
+  db-data:
+
